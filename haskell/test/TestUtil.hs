@@ -58,6 +58,14 @@ ctx = Data.Map.fromList
                       in
                       (@?) (isError ret) $ "Type error was expected but got result " ++ (show (getValue ret))
 
+
+(||-) :: [(Label,Type)] -> Term -> Assertion
+(||-) bindings term = let
+                       c     = ctx bindings
+                       check = isSuccess (typeOf c term)
+                     in
+                       (@?) check $ (show term) ++ " should be typeable under context " ++ (show c)
+
 (|-) :: [(Label,Type)] -> Term -> (Ctx, Term)
 (|-) bindings term = (ctx bindings,term)
 

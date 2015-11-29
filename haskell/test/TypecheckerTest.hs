@@ -12,100 +12,58 @@ main :: IO ()
 main = hspec $ do fromHUnitTest (allTests)
 
 allTests :: Test
-allTests = test [atomTests, caseTests, applicationTests]
+allTests = test [updateTest]
 
-atomTests :: Test
-atomTests = test [
-    "{} |- _c : c"     ~:
-    []  |-  Const "c"  |:  TConst "c",
+-- build constants
+c :: Label -> Type
+c = TConst
 
-    "{a : c} |- a : c" ~:
-    [("a", TConst "c")]  |-  Var "a"  |:  TConst "c",
+-- build general type variables
+tv :: Index -> Type
+tv i = TVar i T
 
-    "{} |/- a"         ~:
-    []  |/-  Var "a"
-  ]
+-- build datatype variables
+dv :: Index -> Type
+dv i = TVar i D
 
-caseTests :: Test
-caseTests = test [
-    "{} |- (_c -> _d) :  c > d" ~:
-    []  |-  Case [(PConst "c", ctx [], Const "d")]  |: TFunc (TConst "c") (TConst "d"),
+-- build the fix point for a specific function type
+fix :: Type -> Term
+fix t = Case [(
+          PMatch "f",
+          ctx [("f", t `TFunc` t)],
+          fxx `App` fxx
+        )]
+        where fxx = Case [(
+                      PMatch "x", 
+                      ctx [("x", TRec $ tv 1 `TFunc` t)],
+                      Var "f" `App` (Var "x" `App` Var "x")
+                    )]
 
-    "{} |/- (_c -> a)" ~:
-    []  |/-  Case [(PConst "c", ctx [], Var "a")],
+updateTest :: Test
+updateTest = let
+               -- constants
+               a = c "a"
+               b = c "b"
+               
+               -- list or tree constructors
+               listOrTree = c "nil" `TUnion` c "cons" `TUnion` c "node"
 
-    "{a : 1} |- (_c -> a) :  c > 1" ~:
-    [("a", TVar 1 T)]  |-  Case [(PConst "c", ctx [], Var "a")]  |: TFunc (TConst "c") (TVar 1 T),
+               -- type of the possible arguments of the upd funciton
+               d t = TRec $ (c "pt" `TComp` t) `TUnion` (dv 1 `TComp` dv 1) `TUnion` listOrTree
 
-    "{} |- (a {a:1}-> _d) : 1 > d" ~:
-    []  |-  Case [(PMatch "a", ctx [("a", TVar 1 T)], Const "d")]  |: TFunc (TVar 1 T) (TConst "d"),
-
-    "{} |- (a {a:1}-> a)  : 1 > 1" ~:
-    []  |-  Case [(PMatch "a", ctx [("a", TVar 1 T)], Var "a")]  |: TFunc (TVar 1 T) (TVar 1 T),
-
-    -- invalid binding context for branch
-    "{} |/- (_c {a:1}-> _c)" ~:
-    []  |/-  Case [(PConst "c", ctx [("a", TVar 1 T)], Const "c")],
-
-    -- invalid binding context for branch
-    "{} |/- (a {}-> _c)" ~:
-    []  |/-  Case [(PMatch "a", ctx [], Const "c")],
-
-
-    "{} |- (_c -> _e | _d -> _e)   : (c + d) > e" ~:
-    let
-      branch1 = (PConst "c", ctx [], Const "e")
-      branch2 = (PConst "d", ctx [], Const "e")
-    in
-      [] |- Case [branch1, branch2] |: TFunc (TConst "c" `TUnion` TConst "d") (TConst "e"),
-
-    -- overlapping incompatible branches
-    "{} |/- (_c x {x:1}-> _e | _c y {y:2}-> _e)" ~:
-    let
-      branch1 = (PComp (PConst "c") (PMatch "x"), ctx [("x", TVar 1 T)], Const "e")
-      branch2 = (PComp (PConst "c") (PMatch "y"), ctx [("y", TVar 2 T)], Const "e")
-    in
-      [] |/- Case [branch1, branch2],
-    
-    -- compatibility is not checked with previous branches
-    "{} |/- (_c {}-> _e | y {y:1}-> _e)" ~:
-    let
-      dv1 = TVar 1 D
-      c = TConst "c"
-      d = TConst "d"
-      e = TConst "e"
-      branch1 = (PConst "c", ctx [], Const "d")
-      branch2 = (PMatch "y", ctx [("y", dv1)], Const "e")
-    in
-      [] |- Case [branch1, branch2] |: TFunc (TUnion dv1 c) (TUnion d e),
-
-
-    "{} |- (_c -> _e | _d -> _f)  : (c + d) > (e + f)" ~:
-    let
-      branch1 = (PConst "c", ctx [], Const "e")
-      branch2 = (PConst "d", ctx [], Const "f")
-    in
-      [] |- Case [branch1, branch2] |: TFunc (TConst "c" `TUnion` TConst "d") (TConst "e" `TUnion` TConst "f")
-  ]
-
-
-applicationTests :: Test
-applicationTests = test [
-    "{a : 1} |- _c a : c @ a" ~:
-    [("a", TVar 1 T)]   |-   App (Const "c") (Var "a")  |:  TComp (TConst "c") (TVar 1 T),
-
-    "{} |- (_c -> _d) _c :  d" ~:
-    []  |-  App (Case [(PConst "c", ctx [], Const "d")]) (Const "c")  |: TConst "d",
-
-    -- argument type not compatible with single branch
-    "{} |/- (_c -> _d) _e" ~:
-    []  |/-  App (Case [(PConst "c", ctx [], Const "d")]) (Const "e"),
-
-    -- argument type not compatible with one branch
-    "{} |/- (_c -> _e | _d -> _e) _c" ~:
-    let
-      branch1 = (PConst "c", ctx [], Const "e")
-      branch2 = (PConst "d", ctx [], Const "e")
-    in
-    []  |/-  App (Case [branch1, branch2]) (Const "f")
-  ]
+               -- type used to build the fixpoint combinator
+               tUpd = (a `TFunc` b) `TFunc` (d a `TFunc` d b)
+               
+               -- definition of the function, feeded to the fixpoint combinator
+               upd = Case [
+                       (PMatch "upd", ctx [("upd", tUpd)], Case [
+                         (PMatch "f", ctx [("f", a `TFunc` b)], Case [
+                           (PConst "pt" `PComp` PMatch "z", ctx [("z", a)], Const "pt" `App` (Var "f" `App` Var "z")),
+                           (PMatch "x" `PComp` PMatch "y", ctx [("x", d a), ("y", d a)], (Var "upd" `App` Var "f" `App` Var "x") `App` (Var "upd" `App` Var "f" `App` Var "y")),
+                           (PMatch "w", ctx [("w", listOrTree)], Var "w")
+                         ])
+                       ])
+                     ]
+             in test [
+                []  ||-  App (fix tUpd) upd
+               ]
