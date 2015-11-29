@@ -1,9 +1,9 @@
 CAP
 ===
 
-Type checker para CAP.
+Type checker for CAP.
 
-Se requiere Cabal (versión mínima 1.20) para compilar y ejecutar el programa. Para instalar dependencias y compilar:
+Cabal >= 1.20 is required to compile and run the program. To install dependencies and compile:
 
 ```
 cabal sandbox init
@@ -11,8 +11,10 @@ cabal install --only-dependencies --enable-tests
 cabal build
 ```
 
-Los tests se ejecutan con `cabal test`.
+Run tests with `cabal test`.
 
-En el archivo `test/TypecheckerTest.hs` se encuentran ejemplos de cómo escribir expresiones.
+Launch an interactive interpreter with  `cabal repl`.
 
-Para ejecutar un intérprete interactivo: `cabal repl`.
+Examples of how to write expressions can be found in `test/TypecheckerTest.hs`.
+
+
