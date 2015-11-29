@@ -29,26 +29,6 @@ class PathPolymorphismTest extends FunSuite {
     )
   }
   
-  test("path polymorphism") {
-    val cc = c("c")
-    val d = µ((dv(1) $ dv(1)) + cc)
-    val a = d -> d
-    
-    val y = fix(a)    
-    
-    val t = _case(
-        (__v("f"), Map("f" -> a), _case(
-            (__v("x") $ __v("y"), Map("x" -> d, "y" -> d), _v("f") $ _v("x") $ (_v("f") $ _v("y"))),
-            (__v("w"), Map("w" -> cc), _v("w"))
-        ))
-    )
-    
-    checkOk(Map(), y, (a -> a) -> a)
-    checkOk(Map(), t)
-    checkOk(Map(), y $ t)
-  }
- 
- 
   /**
   * generic size function
   */
