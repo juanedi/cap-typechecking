@@ -18,17 +18,6 @@ class TypecheckingTest extends FunSuite {
     intercept[TypecheckingError] { typechecking.typeOf(ctx, term) }
   }
 
-  /** Builds Curry's fix point combinator Y for a particular function type */
-  def fix(t: Type) : Term = {
-    val fxx = _case(
-      (__v("x"), Map("x" -> µ(v(1) -> t)), _v("f") $ (_v("x") $ _v("x")))
-    )
-    
-    _case(
-       (__v("f"), Map("f" -> (t -> t)), fxx $ fxx)
-    )
-  }
-  
   test("atoms") {
     checkOk(Map(), _c("c"), c("c"))
     checkOk(Map("a" -> c("c")), _v("a"), c("c"))
@@ -135,57 +124,4 @@ class TypecheckingTest extends FunSuite {
     )
   }
   
-  test("path polymorphism") {
-    val cc = c("c")
-    val d = µ((dv(1) $ dv(1)) + cc)
-    val a = d -> d
-    
-    val y = fix(a)    
-    
-    val t = _case(
-        (__v("f"), Map("f" -> a), _case(
-            (__v("x") $ __v("y"), Map("x" -> d, "y" -> d), _v("f") $ _v("x") $ (_v("f") $ _v("y"))),
-            (__v("w"), Map("w" -> cc), _v("w"))
-        ))
-    )
-    
-    checkOk(Map(), y, (a -> a) -> a)
-    checkOk(Map(), t)
-    checkOk(Map(), y $ t)
-  }
- 
-  
-  /**
-   * generic update function that traverses lists or trees to update points
-   */
-  test("path polymorphism - generic update") {
-    val a = c("A")
-    val b = c("B")
-    val listOrTree = c("nil") + c("cons") + c("node")
-    
-    def d(t: Type) : Type = {
-      µ((c("pt") $ t) + (dv(1) $ dv(1)) + listOrTree)
-    }
-    
-    val tUpd = (a -> b) -> (d(a) -> d(b))
-    val y = fix(tUpd)
-    
-   
-   val t = _case(
-       (__v("upd"), Map("upd" -> tUpd), _case(
-           (__v("f"), Map("f" -> (a -> b)), _case(
-               
-               (__c("pt") $ __v("z"), Map("z" -> a), _c("pt") $ (_v("f") $ _v("z"))),
-               
-               (__v("x") $ __v("y"), Map("x" -> d(a), "y" -> d(a)), (_v("upd") $ _v("f") $ _v("x")) $ (_v("upd") $ _v("f") $ _v("y"))),
-               
-               (__v("w"), Map("w" -> listOrTree), _v("w"))
-           ))
-       ))
-   )
-   
-   checkOk(Map(), y, (tUpd -> tUpd) -> tUpd)
-   checkOk(Map(), y $ t)
-  }
- 
 }

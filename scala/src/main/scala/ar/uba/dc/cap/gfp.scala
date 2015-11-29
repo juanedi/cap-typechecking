@@ -94,7 +94,7 @@ object gfp {
   def initMatchCount(p: Pair, mci: MatchCountIndex) : Unit = p match {
     case (UnionNode(as), UnionNode(bs)) => initMatchCount(p, as.length, bs.length, mci)
     case (a1, UnionNode(bs))            => initMatchCount(p, 1, bs.length, mci)
-    case (UnionNode(as), b1)            => initMatchCount(p, 1, as.length, mci)
+    case (UnionNode(as), b1)            => initMatchCount(p, as.length, 1, mci)
     case _ => ;
   }
   
