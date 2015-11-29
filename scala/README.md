@@ -1,14 +1,14 @@
 CAP
 ===
 
-Type checker para CAP.
+Type checker for CAP.
 
-Se requiere SBT (versión mínima 0.13.9) para compilar y ejecutar el programa.
+SBT >= 0.13.9 is required to compile and run the program.
 
-Para instalar dependencias y compilar: `sbt compile`
+Install dependencies and build with: `sbt compile`
 
-Los tests se ejecutan con `sbt test`.
+Run tests with `sbt test`.
 
-En el archivo `src/test/scala/ar/uba/dc/cap/SubtypingTest.scala` se encuentran ejemplos de cómo escribir expresiones.
+Examples of how to write expressions can be found in `src/test/scala/ar/uba/dc/cap/TypecheckingTest.scala`.
 
-Para ejecutar un intérprete interactivo: `sbt console`. Se debe ejecutar `import ar.uba.dc.cap.dsl._` para poder utilizar el DSL de expresiones.
+Launch an interactive interpreter with `sbt console`. It is recommended to execute `import ar.uba.dc.cap.dsl._` to include the DSL for CAP expressions.
