@@ -54,7 +54,6 @@ class PathPolymorphismTest extends FunSuite {
   */
   test("path polymorphism - generic size") {
     val nat = c("nat")
-    val sum = _v("+")
     val tSum = nat -> (nat -> nat)
     
     val a = c("A")
